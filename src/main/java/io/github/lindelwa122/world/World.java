@@ -3,6 +3,8 @@ package io.github.lindelwa122.world;
 import java.util.ArrayList;
 import java.util.List;
 
+import java.awt.*;
+
 import io.github.lindelwa122.coords.Coords;
 
 public class World {
@@ -83,8 +85,8 @@ public class World {
                 if ((dx==0 && dy==0) 
                     || (x==0 && dx==-1) 
                     || (y==0 && dy==-1) 
-                    || (x==this.WIDTH-1 && dx==1) 
-                    || (y==this.HEIGHT-1 && dy==1)) continue;
+                    || (x==(this.WIDTH / this.POINT_SIZE)-1 && dx==1) 
+                    || (y==(this.HEIGHT / this.POINT_SIZE)-1 && dy==1)) continue;
 
                 Climate climateAtCoords = this.CLIMATE_GRID.get(x+dx).get(y+dy);
                 if (climate == climateAtCoords) count++;
@@ -137,5 +139,37 @@ public class World {
                 }
             }
         }
+    }
+
+    public void paintWorld(Graphics g) {
+        g.setColor(Color.GREEN);
+        g.fillRect(0, 0, 100, 100);
+        return;
+
+        // for (int x = 0; x < this.CLIMATE_GRID.size(); x++) {
+        //     for (int y = 0; y < this.CLIMATE_GRID.get(x).size(); y++) {
+        //         switch (this.CLIMATE_GRID.get(x).get(y)) {
+        //             case HOT:
+        //                 g.setColor(Color.YELLOW);
+        //                 break;
+
+        //             case COLD:
+        //                 g.setColor(Color.GREEN);
+        //                 break;
+
+        //             case WET:
+        //                 g.setColor(Color.BLUE);
+        //                 break;
+
+        //             case DRY:
+        //                 g.setColor(Color.ORANGE);
+        //                 break;
+                
+        //             default:
+        //                 break;
+        //         }
+        //         g.fillRect(x*this.POINT_SIZE, y*this.POINT_SIZE, this.POINT_SIZE, this.POINT_SIZE);
+        //     }
+        // }
     }
 }
