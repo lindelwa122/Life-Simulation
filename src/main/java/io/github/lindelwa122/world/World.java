@@ -33,7 +33,7 @@ public class World {
         this.COLD_CLIMATE_ORIGIN = new Coords((width / this.POINT_SIZE)-1, 0);
         this.WET_CLIMATE_ORIGIN = new Coords(0, (height / this.POINT_SIZE)-1);
         this.HOT_CLIMATE_ORIGIN = new Coords((height / this.POINT_SIZE)-1, (width / this.POINT_SIZE)-1);
-        
+
         this.createClimateRegions();
     }
 
@@ -139,19 +139,19 @@ public class World {
             for (int y = 0; y < this.CLIMATE_GRID.get(x).size(); y++) {
                 switch (this.CLIMATE_GRID.get(x).get(y)) {
                     case HOT:
-                        g.setColor(Color.YELLOW);
+                        g.setColor(new Color(5, 250, 38, 50));
                         break;
 
                     case COLD:
-                        g.setColor(Color.WHITE);
+                        g.setColor(new Color(255, 255, 255, 50));
                         break;
 
                     case WET:
-                        g.setColor(Color.BLUE);
+                        g.setColor(new Color(5, 123, 250, 50));
                         break;
 
                     case DRY:
-                        g.setColor(Color.ORANGE);
+                        g.setColor(new Color(250, 175, 5, 50));
                         break;
                 
                     default:
