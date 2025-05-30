@@ -19,11 +19,9 @@ public class World {
     private final int POINT_SIZE = 10;
 
     // Weights
-    private final double CORNER_WEIGHT = 0.5;
-    private final double NEIGHBOUR_WEIGHT = 0.4;
-    private final double RAND_VARIATION_WEIGHT = 0.1;
-
-    private final double MAX_DIST;
+    private final double CORNER_WEIGHT = 0.9;
+    private final double NEIGHBOUR_WEIGHT = 0.7;
+    private final double RAND_VARIATION_WEIGHT = 0.5;
 
     private final List<List<Climate>> CLIMATE_GRID = new ArrayList<>();
 
@@ -32,15 +30,10 @@ public class World {
         this.WIDTH = width;
 
         this.DRY_CLIMATE_ORIGIN = new Coords(0, 0);
-        this.COLD_CLIMATE_ORIGIN = new Coords(width-1, 0);
-        this.WET_CLIMATE_ORIGIN = new Coords(0, height-1);
-        this.HOT_CLIMATE_ORIGIN = new Coords(height-1, width-1);
-
-        this.MAX_DIST = this.distance(
-            new Coords(0, 0), 
-            new Coords(height-1, width-1)
-        );
-
+        this.COLD_CLIMATE_ORIGIN = new Coords((width / this.POINT_SIZE)-1, 0);
+        this.WET_CLIMATE_ORIGIN = new Coords(0, (height / this.POINT_SIZE)-1);
+        this.HOT_CLIMATE_ORIGIN = new Coords((height / this.POINT_SIZE)-1, (width / this.POINT_SIZE)-1);
+        
         this.createClimateRegions();
     }
 
@@ -66,13 +59,13 @@ public class World {
     private double getCornerInfluence(Climate climate, Coords coords) {
         Coords cornerC = null;
         switch (climate) {
-            case DRY: cornerC = this.DRY_CLIMATE_ORIGIN;
-            case COLD: cornerC = this.COLD_CLIMATE_ORIGIN;
-            case WET: cornerC = this.WET_CLIMATE_ORIGIN;
-            case HOT: cornerC = this.HOT_CLIMATE_ORIGIN;
+            case DRY -> cornerC = this.DRY_CLIMATE_ORIGIN;
+            case COLD -> cornerC = this.COLD_CLIMATE_ORIGIN;
+            case WET -> cornerC = this.WET_CLIMATE_ORIGIN;
+            case HOT -> cornerC = this.HOT_CLIMATE_ORIGIN;
         }
 
-        return Math.max(1 - this.distance(cornerC, coords) / this.MAX_DIST, 0);
+        return Math.max(1 - this.distance(cornerC, coords) / (this.WIDTH / this.POINT_SIZE), 0);
     }
 
     private double getNeighbourInfluence(Climate climate, Coords coords) {
@@ -89,10 +82,10 @@ public class World {
                     || (y==(this.HEIGHT / this.POINT_SIZE)-1 && dy==1)) continue;
 
                 Climate climateAtCoords = this.CLIMATE_GRID.get(x+dx).get(y+dy);
-                if (climate == climateAtCoords) count++;
+                if (climate.equals(climateAtCoords)) count++;
             }
         }
-        return count / 8;
+        return (double) count / 8;
     }
 
     private double getRandomVariation() {
@@ -107,7 +100,7 @@ public class World {
 
     private boolean biggerThanAll(double value, List<Double> values) {
         for (Double num : values) {
-            if (num < value) return false;
+            if (num > value) return false;
         }
         return true;
     }
@@ -142,34 +135,30 @@ public class World {
     }
 
     public void paintWorld(Graphics g) {
-        g.setColor(Color.GREEN);
-        g.fillRect(0, 0, 100, 100);
-        return;
+        for (int x = 0; x < this.CLIMATE_GRID.size(); x++) {
+            for (int y = 0; y < this.CLIMATE_GRID.get(x).size(); y++) {
+                switch (this.CLIMATE_GRID.get(x).get(y)) {
+                    case HOT:
+                        g.setColor(Color.YELLOW);
+                        break;
 
-        // for (int x = 0; x < this.CLIMATE_GRID.size(); x++) {
-        //     for (int y = 0; y < this.CLIMATE_GRID.get(x).size(); y++) {
-        //         switch (this.CLIMATE_GRID.get(x).get(y)) {
-        //             case HOT:
-        //                 g.setColor(Color.YELLOW);
-        //                 break;
+                    case COLD:
+                        g.setColor(Color.WHITE);
+                        break;
 
-        //             case COLD:
-        //                 g.setColor(Color.GREEN);
-        //                 break;
+                    case WET:
+                        g.setColor(Color.BLUE);
+                        break;
 
-        //             case WET:
-        //                 g.setColor(Color.BLUE);
-        //                 break;
-
-        //             case DRY:
-        //                 g.setColor(Color.ORANGE);
-        //                 break;
+                    case DRY:
+                        g.setColor(Color.ORANGE);
+                        break;
                 
-        //             default:
-        //                 break;
-        //         }
-        //         g.fillRect(x*this.POINT_SIZE, y*this.POINT_SIZE, this.POINT_SIZE, this.POINT_SIZE);
-        //     }
-        // }
+                    default:
+                        break;
+                }
+                g.fillRect(x*this.POINT_SIZE, y*this.POINT_SIZE, this.POINT_SIZE, this.POINT_SIZE);
+            }
+        }
     }
 }

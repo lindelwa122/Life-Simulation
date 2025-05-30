@@ -17,7 +17,7 @@ public class Simulation extends JPanel {
         super.paintComponent(g);
 
         World world = new World(WORLD_HEIGHT, WORLD_WIDTH);
-        // world.paintWorld(g);
+        world.paintWorld(g);
     }
 
     public static void main(String[] args) {
