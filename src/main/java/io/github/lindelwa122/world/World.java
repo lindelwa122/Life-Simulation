@@ -65,7 +65,7 @@ public class World {
             case HOT -> cornerC = this.HOT_CLIMATE_ORIGIN;
         }
 
-        return Math.max(1 - this.distance(cornerC, coords) / (this.WIDTH / this.POINT_SIZE), 0);
+        return Math.max(1 - this.distance(cornerC, coords) / (this.WIDTH / (double) this.POINT_SIZE), 0);
     }
 
     private double getNeighbourInfluence(Climate climate, Coords coords) {
@@ -74,18 +74,34 @@ public class World {
         int y = coords.y();
 
         for (int dx = -1; dx <= 1; dx++) {
-            for (int dy = -1; dy <= 1; dy++) {  
-                if ((dx==0 && dy==0) 
-                    || (x==0 && dx==-1) 
-                    || (y==0 && dy==-1) 
-                    || (x==(this.WIDTH / this.POINT_SIZE)-1 && dx==1) 
-                    || (y==(this.HEIGHT / this.POINT_SIZE)-1 && dy==1)) continue;
+            for (int dy = -1; dy <= 1; dy++) {
+                if (isOutOfBounds(x, y, dx, dy))
+                    continue;
 
-                Climate climateAtCoords = this.CLIMATE_GRID.get(x+dx).get(y+dy);
-                if (climate.equals(climateAtCoords)) count++;
+                Climate climateAtCoords = this.CLIMATE_GRID.get(x + dx).get(y + dy);
+                if (climate.equals(climateAtCoords))
+                    count++;
             }
         }
         return (double) count / 8;
+    }
+
+    private boolean isOutOfBounds(int x, int y, int dx, int dy) {
+        return isStationary(dx, dy) || isOutOfBoundsHorizontal(x, dx) || isOutOfBoundsVertical(y, dy);
+    }
+
+    private boolean isStationary(int dx, int dy) {
+        return (dx == 0 && dy == 0);
+    }
+
+    private boolean isOutOfBoundsHorizontal(int x, int dx) {
+        return (x == 0 && dx == -1)
+                || (x == (this.WIDTH / this.POINT_SIZE) - 1 && dx == 1);
+    }
+
+    private boolean isOutOfBoundsVertical(int y, int dy) {
+        return (y == 0 && dy == -1)
+                || (y == (this.HEIGHT / this.POINT_SIZE) - 1 && dy == 1);
     }
 
     private double getRandomVariation() {
