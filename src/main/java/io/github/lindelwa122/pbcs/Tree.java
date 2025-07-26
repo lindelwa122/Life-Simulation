@@ -36,7 +36,9 @@ public class Tree {
         this.makeUp = makeUp;
         this.type = type;
         this.world = world;
-
+    }
+    
+    private void setLifeExpectancy() {
         Coords coords = this.world.getTreeCoords(this);
         Climate climate = this.world.getClimateOnCoords(coords);
 
@@ -74,6 +76,9 @@ public class Tree {
         Tree newTree = new Tree(world, makeUp, type);
         
         world.addTree(newTree);
+
+        newTree.setLifeExpectancy();
+        
         return newTree;
     }
 

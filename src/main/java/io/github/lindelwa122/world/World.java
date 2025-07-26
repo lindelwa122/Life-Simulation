@@ -105,7 +105,7 @@ public class World {
     }
 
     public Climate getClimateOnCoords(Coords coords) {
-        return this.climateGrid.get(coords.x()).get(coords.y());
+        return this.climateGrid.get(coords.x() / POINT_SIZE).get(coords.y() / POINT_SIZE);
     }
 
     private void createEmptyClimateGrid() {

@@ -1,6 +1,5 @@
 package io.github.lindelwa122.simulation;
 
-import java.awt.Color;
 import java.awt.Graphics;
 
 import javax.swing.JFrame;
