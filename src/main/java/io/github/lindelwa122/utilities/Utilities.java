@@ -1,15 +1,22 @@
 package io.github.lindelwa122.utilities;
 
 import java.util.List;
+import java.util.Random;
 
 public class Utilities {
+    private Utilities() {
+        throw new IllegalStateException("Utility class");
+    }
+
+    private static Random r = new Random();
+
     public static Object pickRandom(List<Object> list) {
-        int rand = (int) Math.floor(Math.random() * list.size());
+        int rand = r.nextInt(list.size());
         return list.get(rand);
     }
 
     public static int random(int start, int end) {
-        return (int) Math.floor(Math.random() * end-start) + start;
+        return r.nextInt(start, end);
     }
 
     public static int random(int end) {
