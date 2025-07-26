@@ -1,11 +1,14 @@
 package io.github.lindelwa122.world;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-
+import java.util.Map;
 import java.awt.*;
 
 import io.github.lindelwa122.coords.Coords;
+import io.github.lindelwa122.pbcs.Tree;
+import io.github.lindelwa122.utilities.Utilities;
 
 public class World {
     private final int HEIGHT;
@@ -25,6 +28,8 @@ public class World {
 
     private final List<List<Climate>> CLIMATE_GRID = new ArrayList<>();
 
+    private final Map<Tree, Coords> treeList = new HashMap<>();
+
     public World(int height, int width) {
         this.HEIGHT = height;
         this.WIDTH = width;
@@ -35,6 +40,23 @@ public class World {
         this.HOT_CLIMATE_ORIGIN = new Coords((height / this.POINT_SIZE)-1, (width / this.POINT_SIZE)-1);
 
         this.createClimateRegions();
+    }
+
+    public void addTree(Tree tree) {
+        int randX = Utilities.random(this.WIDTH / this.POINT_SIZE);
+        int randY = Utilities.random(this.HEIGHT / this.POINT_SIZE);
+
+        Coords coords = new Coords(randX, randY);
+        this.treeList.put(tree, coords);
+    }
+
+    public void removeTree(Tree tree) {
+        for (Tree t : this.treeList.keySet()) {
+            if (t.equals(tree)) {
+                this.treeList.remove(tree);
+                return;
+            }
+        }
     }
 
     private void createEmptyClimateGrid() {

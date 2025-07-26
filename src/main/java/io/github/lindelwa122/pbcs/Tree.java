@@ -19,7 +19,7 @@ public class Tree {
 
     public static final int SIZE = 5;
 
-    protected World world;
+    protected final World WORLD;
 
     private int c;
     private int lifeExpectancy;
@@ -29,12 +29,13 @@ public class Tree {
 
     private boolean alive;
 
-    public Tree(CellularMakeUp makeUp, FundamentalElements type) {
+    public Tree(World world, CellularMakeUp makeUp, FundamentalElements type) {
         this.MAKE_UP = makeUp;
         this.TYPE = type;
+        this.WORLD = world;
     }
 
-    public static void plantTree(World world) {
+    public static Tree plantTree(World world) {
         List<Object> plantTypes = List.of(FundamentalElements.LUNAPHYLL, FundamentalElements.XYLORA, FundamentalElements.MORBIORA);
         FundamentalElements type = (FundamentalElements) Utilities.pickRandom(plantTypes);
 
@@ -42,8 +43,13 @@ public class Tree {
         Element ignyra = new Element(FundamentalElements.IGNYRA, Utilities.random(100));
         Element xeraphin = new Element(FundamentalElements.XERAPHIN, Utilities.random(100));
         Element humidra = new Element(FundamentalElements.HUMIDRA, Utilities.random(100));
-        Element cryonel new Element(FundamentalElements.CRYONEL, Utilities.random(100));
-        Element lunaphyll = new Element()
+        Element cryonel = new Element(FundamentalElements.CRYONEL, Utilities.random(100));
+
+        CellularMakeUp makeUp = new CellularMakeUp(hydrex, ignyra, xeraphin, humidra, cryonel, null, null, null, null);
+        Tree newTree = new Tree(world, makeUp, type);
+        
+        world.addTree(newTree);
+        return newTree;
     }
 
     public boolean isAlive() {
@@ -60,7 +66,7 @@ public class Tree {
 
     private void incrementAge() {
         if (!this.isAlive() && this.decayingStep >= this.MAX_DECAY_ROUNDS) {
-            World.removeTree(this);
+            this.WORLD.removeTree(this);
         }
 
         else if (!this.isAlive()) {
