@@ -52,7 +52,7 @@ public class World {
 
     public void removeTree(Tree tree) {
         for (Tree t : this.treeList.keySet()) {
-            if (t.equals(tree)) {
+            if (t == tree) {
                 this.treeList.remove(tree);
                 return;
             }
