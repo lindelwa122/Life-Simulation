@@ -19,7 +19,7 @@ public class Simulation extends JPanel {
 
         World world = new World(WORLD_HEIGHT, WORLD_WIDTH);
 
-        for (int i = 0; i < 30; i++) {
+        for (int i = 0; i < 20; i++) {
             Tree.plantTree(world);
         }
 

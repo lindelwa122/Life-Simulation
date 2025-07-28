@@ -8,6 +8,7 @@ import java.util.Map.Entry;
 import java.awt.*;
 
 import io.github.lindelwa122.coords.Coords;
+import io.github.lindelwa122.mbcs.Creature;
 import io.github.lindelwa122.pbcs.Tree;
 import io.github.lindelwa122.utilities.MostlyUsedColors;
 import io.github.lindelwa122.utilities.Utilities;
@@ -31,6 +32,7 @@ public class World {
     private final List<List<Climate>> climateGrid = new ArrayList<>();
 
     private final Map<Tree, Coords> treeList = new HashMap<>();
+    private final Map<Creature, Coords> creatureList = new HashMap<>();
 
     public World(int height, int width) {
         this.height = height;
@@ -52,9 +54,7 @@ public class World {
         return !(bottomRight1.y() > topLeft2.y() || bottomRight2.y() > topLeft1.y());
     }
 
-    private boolean isAreaOccupied(Coords startCoords, int height, int width) {
-        Coords endCoords = new Coords(startCoords.x() + width, startCoords.y() + height); 
-
+    private boolean isAreaOccupiedByTree(Coords startCoords, Coords endCoords) {
         for (Entry<Tree, Coords> entry : this.treeList.entrySet()) {
             Coords treeStartCoords = entry.getValue();
             Coords treeEndCoords = new Coords(
@@ -65,8 +65,29 @@ public class World {
                 return true;
             }
         }
+        return false;
+    }
+
+    private boolean isAreaOccupiedByCreature(Coords startCoords, Coords endCoords) {
+        for (Entry<Creature, Coords> entry : this.creatureList.entrySet()) {
+            Coords creatureStartCoords = entry.getValue();
+            Coords creatureEndCoords = new Coords(
+                creatureStartCoords.x()+POINT_SIZE, 
+                creatureStartCoords.y()+POINT_SIZE
+            );
+
+            if (this.doRectsOverlap(creatureStartCoords, creatureEndCoords, startCoords, endCoords)) {
+                return true;
+            }
+        }
 
         return false;
+    }
+
+    private boolean isAreaOccupied(Coords startCoords, int height, int width) {
+        Coords endCoords = new Coords(startCoords.x() + width, startCoords.y() + height); 
+        return this.isAreaOccupiedByTree(startCoords, endCoords)
+            || this.isAreaOccupiedByCreature(startCoords, endCoords);
     }
 
     public void addTree(Tree tree) {
@@ -106,6 +127,24 @@ public class World {
 
     public Climate getClimateOnCoords(Coords coords) {
         return this.climateGrid.get(coords.x() / POINT_SIZE).get(coords.y() / POINT_SIZE);
+    }
+
+    public boolean addCreature(Creature creature) {
+        int maximumTries = (this.width/POINT_SIZE) * (this.height/POINT_SIZE);
+        int tries = 0;
+
+        while (tries <= maximumTries) {
+            int randX = Utilities.random(this.width);
+            int randY = Utilities.random(this.height);
+
+            Coords coords = new Coords(randX, randY);
+            if (!isAreaOccupied(coords, POINT_SIZE, POINT_SIZE)) {
+                this.creatureList.put(creature, coords);
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void createEmptyClimateGrid() {
