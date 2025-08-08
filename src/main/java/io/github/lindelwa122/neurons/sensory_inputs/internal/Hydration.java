@@ -1,4 +1,4 @@
-package io.github.lindelwa122.neurons.sensoryInputs.internal;
+package io.github.lindelwa122.neurons.sensory_inputs.internal;
 
 import io.github.lindelwa122.mbcs.Creature;
 import io.github.lindelwa122.neurons.Neuron;

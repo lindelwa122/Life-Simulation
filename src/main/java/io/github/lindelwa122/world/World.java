@@ -147,6 +147,14 @@ public class World {
         return false;
     }
 
+    public int getHeight() {
+        return this.height;
+    }
+
+    public int getWidth() {
+        return this.width;
+    }
+
     private void createEmptyClimateGrid() {
         for (int x = 0; x < this.width / POINT_SIZE; x++) {
             List<Climate> row = new ArrayList<>();

@@ -1,12 +1,12 @@
 package io.github.lindelwa122.mbcs;
 
-
 import java.util.List;
 
 import io.github.lindelwa122.cellularStructure.CellularMakeUp;
 import io.github.lindelwa122.cellularStructure.DietaryOptions;
 import io.github.lindelwa122.cellularStructure.Element;
 import io.github.lindelwa122.cellularStructure.FundamentalElements;
+import io.github.lindelwa122.coords.Coords;
 import io.github.lindelwa122.utilities.Utilities;
 import io.github.lindelwa122.world.World;
 
@@ -16,11 +16,25 @@ public class Creature {
     private DietaryOptions dietaryOptions;
 
     private Hydration hydration = new Hydration(new InternalValue());
+    private Hunger hunger = new Hunger(new InternalValue());
+    private Age age = new Age(new InternalValue());
+    private Libido libido = new Libido(new InternalValue());
+    private Fear fear = new Fear(new InternalValue());
+    private Energy energy = new Energy(new InternalValue(100));
+    private Health health = new Health(new InternalValue(100));
 
-    public Creature(CellularMakeUp makeUp, Element type, DietaryOptions dietaryOptions) {
+    private int oscillator = Utilities.random(1);
+    private Coords previousPosition = new Coords();
+    private Coords currentPosition = new Coords();
+    private World world;
+    private int gender;
+
+    public Creature(CellularMakeUp makeUp, Element type, DietaryOptions dietaryOptions, int gender, World world) {
         this.makeUp = makeUp;
         this.type = type;
         this.dietaryOptions = dietaryOptions;
+        this.world = world;
+        this.gender = gender;
     }
 
     public static boolean birthCreature(World world) {
@@ -45,12 +59,66 @@ public class Creature {
             DietaryOptions.OPP
         ));
 
-        Creature c = new Creature(makeUp, type, dietaryOptions);
+        int gender = Utilities.random(1);
+
+        Creature c = new Creature(makeUp, type, dietaryOptions, gender, world);
         return world.addCreature(c);
     }
 
     // GETTERS
     public int getHydrationLevel() {
         return this.hydration.value().getValue();
+    }
+
+    public int getHungerLevel() {
+        return this.hunger.value().getValue();
+    }
+
+    public int getOscillator() {
+        return this.oscillator;
+    }
+
+    public int getAge() {
+        return this.age.value().getValue();
+    }
+
+    public Coords getCurrentPosition() {
+        return this.currentPosition;
+    }
+
+    public Coords getPreviousPosition() {
+        return this.previousPosition;
+    }
+
+    public int getWorldHeight() {
+        return this.world.getHeight() / World.POINT_SIZE;
+    }
+
+    public int getWorldWidth() {
+        return this.world.getWidth() / World.POINT_SIZE;
+    }
+
+    public Element getType() {
+        return this.type;
+    }
+
+    public int getLibido() {
+        return this.libido.value().getValue();
+    }
+
+    public int getFear() {
+        return this.fear.value().getValue();
+    }
+
+    public int getEnergy() {
+        return this.energy.value().getValue();
+    }
+
+    public int getHealth() {
+        return this.health.value().getValue();
+    }
+
+    public int getGender() {
+        return this.gender;
     }
 }
