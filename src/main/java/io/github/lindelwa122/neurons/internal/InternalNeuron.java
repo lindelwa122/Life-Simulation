@@ -10,8 +10,8 @@ import io.github.lindelwa122.neurons.Neuron;
 public class InternalNeuron extends Neuron {
     List<Neuron> inputNeurons = new ArrayList<>();
 
-    protected InternalNeuron(Creature creature) {
-        super(creature);
+    public InternalNeuron(Creature creature) {
+        super(creature, "internal");
     }
 
     public void setInputs(Neuron ...neurons) {
@@ -29,4 +29,13 @@ public class InternalNeuron extends Neuron {
         return Math.tanh(sum);
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        return super.equals(obj);
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
 }

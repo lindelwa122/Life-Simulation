@@ -5,8 +5,8 @@ import io.github.lindelwa122.mbcs.Creature;
 import io.github.lindelwa122.world.World;
 
 public class MoveWest extends ActionNeuron {
-    protected MoveWest(Creature creature) {
-        super(creature);
+    public MoveWest(Creature creature) {
+        super(creature, "move_west_output");
     }
 
     public void activate() {
@@ -15,5 +15,15 @@ public class MoveWest extends ActionNeuron {
 
         World world = this.creature.getWorld();
         world.moveCreature(creature, newPosition);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return super.equals(obj);
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
     }
 }

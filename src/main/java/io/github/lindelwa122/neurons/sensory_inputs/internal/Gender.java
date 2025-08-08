@@ -5,11 +5,21 @@ import io.github.lindelwa122.neurons.Neuron;
 
 public class Gender extends Neuron {
     public Gender(Creature creature) {
-        super(creature);
+        super(creature, "gender_internal");
     }
 
     @Override
     public double value() {
         return this.creature.getGender();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return super.equals(obj);
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
     }
 }

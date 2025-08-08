@@ -9,8 +9,8 @@ import io.github.lindelwa122.neurons.Neuron;
 public abstract class ActionNeuron extends Neuron {
     protected List<Neuron> inputNeurons;
 
-    protected ActionNeuron(Creature creature) {
-        super(creature);
+    protected ActionNeuron(Creature creature, String id) {
+        super(creature, id);
     }
 
     public void setInputs(Neuron ...neurons) {
@@ -29,4 +29,14 @@ public abstract class ActionNeuron extends Neuron {
     }
 
     public abstract void activate();
+
+    @Override
+    public boolean equals(Object obj) {
+        return super.equals(obj);
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
 }

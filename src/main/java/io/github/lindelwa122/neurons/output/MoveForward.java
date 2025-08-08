@@ -5,8 +5,8 @@ import io.github.lindelwa122.mbcs.Creature;
 import io.github.lindelwa122.world.World;
 
 public class MoveForward extends ActionNeuron {
-    protected MoveForward(Creature creature) {
-        super(creature);
+    public MoveForward(Creature creature) {
+        super(creature, "move_forward_output");
     }
 
     public void activate() {
@@ -19,5 +19,15 @@ public class MoveForward extends ActionNeuron {
         Coords newPosition = new Coords(current.x()+diffX, current.y()+diffY);
         World world = this.creature.getWorld();
         world.moveCreature(creature, newPosition);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return super.equals(obj);
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
     }
 }

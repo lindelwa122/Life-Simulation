@@ -6,7 +6,7 @@ import io.github.lindelwa122.neurons.Neuron;
 
 public class Type extends Neuron {
     public Type(Creature creature) {
-        super(creature);
+        super(creature, "type_internal");
     }
 
     @Override
@@ -14,5 +14,15 @@ public class Type extends Neuron {
         return this.creature.getType().element() == FundamentalElements.CARNYXIS 
             ? 1 
             : 0;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return super.equals(obj);
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
     }
 }

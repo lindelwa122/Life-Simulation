@@ -9,8 +9,8 @@ import io.github.lindelwa122.utilities.Utilities;
 import io.github.lindelwa122.world.World;
 
 public class MoveRandom extends ActionNeuron {
-    protected MoveRandom(Creature creature) {
-        super(creature);
+    public MoveRandom(Creature creature) {
+        super(creature, "move_random_output");
     }
 
     @Override
@@ -28,5 +28,15 @@ public class MoveRandom extends ActionNeuron {
         Coords nextPosition = (Coords) Utilities.pickRandom(List.of(possibleNextCoords));
         World world = this.creature.getWorld();
         world.moveCreature(creature, nextPosition);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return super.equals(obj);
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
     }
 }

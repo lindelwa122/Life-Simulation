@@ -5,11 +5,21 @@ import io.github.lindelwa122.neurons.Neuron;
 
 public class Libido extends Neuron {
     public Libido(Creature creature) {
-        super(creature);
+        super(creature, "libido_internal");
     }
 
     @Override
     public double value() {
         return (double) this.creature.getLibido() / 100;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return super.equals(obj);
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
     }
 }

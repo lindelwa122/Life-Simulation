@@ -5,8 +5,8 @@ import io.github.lindelwa122.mbcs.Creature;
 import io.github.lindelwa122.world.World;
 
 public class MoveBack extends ActionNeuron {
-    protected MoveBack(Creature creature) {
-        super(creature);
+    public MoveBack(Creature creature) {
+        super(creature, "move_back_output");
     }
 
     @Override

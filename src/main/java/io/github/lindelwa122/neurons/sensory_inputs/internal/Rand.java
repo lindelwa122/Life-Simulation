@@ -9,11 +9,21 @@ public class Rand extends Neuron {
     Random random = new Random();
     
     public Rand(Creature creature) {
-        super(creature);
+        super(creature, "rand_internal");
     }
 
     @Override
     public double value() {
         return this.random.nextDouble(1);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return super.equals(obj);
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
     }
 }
