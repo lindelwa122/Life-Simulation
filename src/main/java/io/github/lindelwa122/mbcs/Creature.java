@@ -24,6 +24,8 @@ public class Creature {
     private Health health = new Health(new InternalValue(100));
 
     private int oscillator = Utilities.random(1);
+    private int oscillatorPeriod = (int) Utilities.pickRandom(List.of(10, 15, 30, 50));
+
     private Coords previousPosition = new Coords();
     private Coords currentPosition = new Coords();
     private World world;
@@ -120,5 +122,27 @@ public class Creature {
 
     public int getGender() {
         return this.gender;
+    }
+
+    public World getWorld() {
+        return this.world;
+    }
+
+    // SETTERS
+    public void setOscillatorPeriod(int period) {
+        this.oscillatorPeriod = period;
+    }
+
+    public void setLibido(int libido) {
+        this.libido.value().setValue(libido);
+    }
+
+    public void setFear(int fear) {
+        this.fear.value().setValue(fear);
+    }
+
+    public void setCurrentPosition(Coords position) {
+        this.previousPosition = currentPosition;
+        this.currentPosition = position;
     }
 }

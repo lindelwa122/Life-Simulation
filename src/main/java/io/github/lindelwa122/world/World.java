@@ -147,6 +147,15 @@ public class World {
         return false;
     }
 
+    public boolean moveCreature(Creature creature, Coords position) {
+        if (!this.isAreaOccupied(position, POINT_SIZE, POINT_SIZE) && this.creatureList.containsKey(creature)) {
+            this.creatureList.replace(creature, position);
+            creature.setCurrentPosition(position);
+            return true;
+        }
+        return false;
+    }
+
     public int getHeight() {
         return this.height;
     }
