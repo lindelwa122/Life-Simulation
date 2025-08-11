@@ -1,6 +1,7 @@
 package io.github.lindelwa122.genes;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 
 import io.github.lindelwa122.mbcs.Creature;
@@ -45,6 +46,22 @@ public class Gene {
         this.sinkType = sinkType;
         this.sink = sink;
         this.weight = weight;
+    }
+
+    public Neuron getSource() {
+        return this.source;
+    }
+
+    public Neuron getSink() {
+        return this.sink;
+    }
+
+    public double getWeight() {
+        return this.weight;
+    }
+
+    public boolean containsSensoryInput() {
+        return this.sourceType == 1;
     }
 
     public static List<Neuron> getSensoryNeurons(Creature creature) {
@@ -102,5 +119,19 @@ public class Gene {
         double weight = random.nextDouble(-4, 4);
 
         return new Gene(sourceType, source, sinkType, sink, weight);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+
+        Gene gene = (Gene) obj;
+        return Objects.equals(source, gene.source) && Objects.equals(sink, gene.sink);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.source, this.sink);
     }
 }
