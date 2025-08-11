@@ -11,7 +11,7 @@ public class Type extends Neuron {
 
     @Override
     public double value() {
-        return this.creature.getType().element() == FundamentalElements.CARNYXIS 
+        return this.creature.getType().equals(FundamentalElements.CARNYXIS) 
             ? 1 
             : 0;
     }

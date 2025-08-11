@@ -1,5 +1,6 @@
 package io.github.lindelwa122.genes;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
@@ -95,25 +96,31 @@ public class Gene {
            new SetOscillatorPeriod(creature)
         );
     }
+
+    private static List<Object> convertToObjectList(List<Neuron> neurons) {
+        List<Object> objects = new ArrayList<>();
+        for (Neuron neuron : neurons) objects.add(neuron);
+        return objects;
+    }
     
     public static Gene createGene(Creature creature, List<InternalNeuron> internalNeurons) {
-        int sourceType = Utilities.random(1);
+        int sourceType = Utilities.random(2);
 
         Neuron source;
         if (sourceType == 0) {
-            source = (Neuron) Utilities.pickRandom(List.of(internalNeurons));
+            source = internalNeurons.getFirst();
         } 
         else {
-            source = (Neuron) Utilities.pickRandom(List.of(getSensoryNeurons(creature)));
+            source = (Neuron) Utilities.pickRandom(convertToObjectList(getSensoryNeurons(creature)));
         }
 
-        int sinkType = Utilities.random(1);
+        int sinkType = sourceType == 0 ? 1 : Utilities.random(2);
         Neuron sink;
         if (sinkType == 0) {
-            sink = (Neuron) Utilities.pickRandom(List.of(internalNeurons));
+            sink = internalNeurons.getFirst();
         }
         else {
-            sink = (Neuron) Utilities.pickRandom(List.of(getOutputNeurons(creature)));
+            sink = (Neuron) Utilities.pickRandom(convertToObjectList(getOutputNeurons(creature)));
         }
 
         double weight = random.nextDouble(-4, 4);

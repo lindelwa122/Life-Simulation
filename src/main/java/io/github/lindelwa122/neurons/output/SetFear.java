@@ -9,8 +9,7 @@ public class SetFear extends ActionNeuron {
 
     @Override
     public void activate() {
-        double value = this.value();
-        this.creature.setFear((int) value * 100);
+        this.creature.setFear((int) Math.floor(Math.random()*100));
     }
 
     @Override

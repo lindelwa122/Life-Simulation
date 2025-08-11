@@ -12,7 +12,7 @@ public class MoveNorth extends ActionNeuron {
     @Override
     public void activate() {
         Coords current = this.creature.getCurrentPosition();
-        Coords newPosition = new Coords(current.x(), current.y()-1);
+        Coords newPosition = new Coords(current.x(), current.y()-(1*World.POINT_SIZE));
 
         World world = this.creature.getWorld();
         world.moveCreature(creature, newPosition);

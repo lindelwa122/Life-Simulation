@@ -1,5 +1,6 @@
 package io.github.lindelwa122.genes;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -55,6 +56,7 @@ public class Genome {
             }
         }
 
+        genome.formLayers();
         return genome;
     }
 
@@ -121,8 +123,15 @@ public class Genome {
                     map.put(conn.sink(), value);
                     calculatedValues.add(map);
                 }
+            }
+        }
 
-                else if (neuron instanceof ActionNeuron actionNeuron) {
+        for (List<NeuralConnection> layer : this.layers) {
+            for (NeuralConnection conn : layer) {
+                Neuron neuron = conn.neuron();
+                Neuron sink = conn.sink();
+
+                if (sink instanceof ActionNeuron actionNeuron) {
                     List<Map<Neuron, Double>> inputs = calculatedValues.stream()
                         .filter(map -> {
                             for (Neuron n : map.keySet()) {
@@ -142,8 +151,8 @@ public class Genome {
                     double result = Math.tanh(sum) * conn.weight();
                     actionNeurons.put(actionNeuron, sigmoid(result));
                 }
-                
-                else {
+
+                else if (!isSensoryInput(neuron)) {
                     List<Map<Neuron, Double>> inputs = calculatedValues.stream()
                     .filter(map -> {
                         for (Neuron n : map.keySet()) {
@@ -173,6 +182,10 @@ public class Genome {
     public ActionNeuron getActionNeuronToBeActivated() {
         Map<ActionNeuron, Double> mappedPossibleOutputs = this.calculateOutputValues();
 
+        System.out.println("layers: ");
+        for (List<NeuralConnection> layer : layers) System.out.println(layer);
+        System.out.println("possible outputs: " + mappedPossibleOutputs);
+
         Optional<Map.Entry<ActionNeuron, Double>> maxEntry = mappedPossibleOutputs.entrySet()
                 .stream()
                 .max(Comparator.comparing(Map.Entry::getValue));
@@ -186,6 +199,19 @@ public class Genome {
     }
 
     public void activateActionNeuron() {
-        this.getActionNeuronToBeActivated().activate();
+        ActionNeuron neuron = this.getActionNeuronToBeActivated();
+        if (neuron != null) neuron.activate();
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder output = new StringBuilder();
+
+        for (Gene gene : this.genes) {
+            output.append(MessageFormat.format("{0} -> {1}", gene.getSource(), gene.getSink()));
+            output.append(" | ");
+        }
+
+        return output.toString();
     }
 }

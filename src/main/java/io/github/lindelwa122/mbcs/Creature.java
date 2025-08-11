@@ -1,5 +1,12 @@
 package io.github.lindelwa122.mbcs;
 
+import java.awt.Color;
+import java.awt.Graphics;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.PrintWriter;
+import java.nio.file.Path;
 import java.util.List;
 
 import io.github.lindelwa122.cellularStructure.CellularMakeUp;
@@ -7,12 +14,13 @@ import io.github.lindelwa122.cellularStructure.DietaryOptions;
 import io.github.lindelwa122.cellularStructure.Element;
 import io.github.lindelwa122.cellularStructure.FundamentalElements;
 import io.github.lindelwa122.coords.Coords;
+import io.github.lindelwa122.genes.Genome;
 import io.github.lindelwa122.utilities.Utilities;
 import io.github.lindelwa122.world.World;
 
 public class Creature {
     private CellularMakeUp makeUp;
-    private Element type;
+    private FundamentalElements type;
     private DietaryOptions dietaryOptions;
 
     private Hydration hydration = new Hydration(new InternalValue());
@@ -26,12 +34,14 @@ public class Creature {
     private int oscillator = Utilities.random(1);
     private int oscillatorPeriod = (int) Utilities.pickRandom(List.of(10, 15, 30, 50));
 
-    private Coords previousPosition = new Coords();
-    private Coords currentPosition = new Coords();
+    private Coords previousPosition;
+    private Coords currentPosition;
     private World world;
     private int gender;
 
-    public Creature(CellularMakeUp makeUp, Element type, DietaryOptions dietaryOptions, int gender, World world) {
+    private Genome genome;
+
+    public Creature(CellularMakeUp makeUp, FundamentalElements type, DietaryOptions dietaryOptions, int gender, World world) {
         this.makeUp = makeUp;
         this.type = type;
         this.dietaryOptions = dietaryOptions;
@@ -48,7 +58,7 @@ public class Creature {
 
         CellularMakeUp makeUp = new CellularMakeUp(hydrex, ignyra, xeraphin, humidra, cryonel, null, null, null, null);
         
-        Element type = (Element) Utilities.pickRandom(List.of(
+        FundamentalElements type = (FundamentalElements) Utilities.pickRandom(List.of(
             FundamentalElements.CARNYXIS,
             FundamentalElements.PREDONIX
         ));
@@ -64,7 +74,42 @@ public class Creature {
         int gender = Utilities.random(1);
 
         Creature c = new Creature(makeUp, type, dietaryOptions, gender, world);
-        return world.addCreature(c);
+        c.setGenome(Genome.createGenome(c, 4));
+        boolean added = world.addCreature(c);
+
+        if (added) {
+            Coords currentPosition = world.getCreatureCoords(c);
+            c.currentPosition = currentPosition;
+            c.previousPosition = currentPosition;
+            return true;
+        }
+
+        return false;
+    }
+
+    public void recordBrain() {
+        String projectRoot = System.getProperty("user.dir");
+        Path path = Path.of(projectRoot, "src", "main", "java", "io", "github", "lindelwa122", "brain", "brain-scan.txt");
+
+        FileOutputStream fileOutputStream = null;
+        try {
+            fileOutputStream = new FileOutputStream(new File(path.toString()), true);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        PrintWriter writer = new PrintWriter(fileOutputStream);
+        writer.println(genome.toString());
+        writer.close();
+    }
+
+    public void act() {
+        this.genome.activateActionNeuron();
+    }
+
+    public void paint(Graphics g, Coords coords) {
+        g.setColor(Color.RED);
+        g.fillOval(coords.x(), coords.y(), World.POINT_SIZE, World.POINT_SIZE);
     }
 
     // GETTERS
@@ -100,7 +145,7 @@ public class Creature {
         return this.world.getWidth() / World.POINT_SIZE;
     }
 
-    public Element getType() {
+    public FundamentalElements getType() {
         return this.type;
     }
 
@@ -129,6 +174,10 @@ public class Creature {
     }
 
     // SETTERS
+    public void setGenome(Genome genome) {
+        this.genome = genome;
+    }
+
     public void setOscillatorPeriod(int period) {
         this.oscillatorPeriod = period;
     }

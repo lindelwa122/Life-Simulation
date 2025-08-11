@@ -124,7 +124,7 @@ public class Tree {
 
         Color fruitsColor;
         if (type == FundamentalElements.LUNAPHYLL) {
-            fruitsColor = Color.RED;
+            fruitsColor = Color.WHITE;
         }
         else if (type == FundamentalElements.XYLORA) {
             fruitsColor = Color.ORANGE;

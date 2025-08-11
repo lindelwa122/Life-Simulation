@@ -9,8 +9,7 @@ public class SetLibido extends ActionNeuron {
 
     @Override
     public void activate() {
-        double value = this.value();
-        this.creature.setLibido((int) value * 100);
+        this.creature.setLibido((int) Math.floor(Math.random()*100));
     }
 
     @Override

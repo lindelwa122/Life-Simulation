@@ -156,6 +156,10 @@ public class World {
         return false;
     }
 
+    public Coords getCreatureCoords(Creature creature) {
+        return this.creatureList.get(creature);
+    }
+
     public int getHeight() {
         return this.height;
     }
@@ -277,6 +281,18 @@ public class World {
         }
     }
 
+    public void doCreatureBrainScan() {
+        for (Creature creature : creatureList.keySet()) {
+            creature.recordBrain();
+        }
+    }
+
+    public void nextSimulationRound() {
+        for (Creature creature : creatureList.keySet()) {
+            creature.act();
+        }
+    }
+
     public void paintWorld(Graphics g) {
         for (int x = 0; x < this.climateGrid.size(); x++) {
             for (int y = 0; y < this.climateGrid.get(x).size(); y++) {
@@ -306,6 +322,10 @@ public class World {
 
         for (Map.Entry<Tree, Coords> treeEntry : this.treeList.entrySet()) {
             treeEntry.getKey().paint(g, treeEntry.getValue());
+        }
+
+        for (Map.Entry<Creature, Coords> creatureEntry : this.creatureList.entrySet()) {
+            creatureEntry.getKey().paint(g, creatureEntry.getValue());
         }
     }
 }

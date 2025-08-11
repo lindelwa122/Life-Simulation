@@ -16,7 +16,7 @@ public class MoveForward extends ActionNeuron {
         int diffX = current.x() - previous.x();
         int diffY = current.y() - previous.y();
 
-        Coords newPosition = new Coords(current.x()+diffX, current.y()+diffY);
+        Coords newPosition = new Coords(current.x()+(diffX*World.POINT_SIZE), current.y()+(diffY*World.POINT_SIZE));
         World world = this.creature.getWorld();
         world.moveCreature(creature, newPosition);
     }
