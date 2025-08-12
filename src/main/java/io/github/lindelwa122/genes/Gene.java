@@ -1,5 +1,6 @@
 package io.github.lindelwa122.genes;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -63,6 +64,11 @@ public class Gene {
 
     public boolean containsSensoryInput() {
         return this.sourceType == 1;
+    }
+
+    public void resetCreature(Creature creature) {
+        this.source.resetCreature(creature);
+        this.sink.resetCreature(creature);
     }
 
     public static List<Neuron> getSensoryNeurons(Creature creature) {
@@ -140,5 +146,10 @@ public class Gene {
     @Override
     public int hashCode() {
         return Objects.hash(this.source, this.sink);
+    }
+
+    @Override
+    public String toString() {
+        return MessageFormat.format("{0} -> {1}", this.source, this.sink);
     }
 }

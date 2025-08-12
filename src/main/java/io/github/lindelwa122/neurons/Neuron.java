@@ -15,6 +15,10 @@ public abstract class Neuron {
 
     public abstract double value();
 
+    public void resetCreature(Creature creature) {
+        this.creature = creature;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;

@@ -182,10 +182,6 @@ public class Genome {
     public ActionNeuron getActionNeuronToBeActivated() {
         Map<ActionNeuron, Double> mappedPossibleOutputs = this.calculateOutputValues();
 
-        System.out.println("layers: ");
-        for (List<NeuralConnection> layer : layers) System.out.println(layer);
-        System.out.println("possible outputs: " + mappedPossibleOutputs);
-
         Optional<Map.Entry<ActionNeuron, Double>> maxEntry = mappedPossibleOutputs.entrySet()
                 .stream()
                 .max(Comparator.comparing(Map.Entry::getValue));

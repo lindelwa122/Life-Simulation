@@ -9,19 +9,15 @@ import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.util.List;
 
-import io.github.lindelwa122.cellularStructure.CellularMakeUp;
-import io.github.lindelwa122.cellularStructure.DietaryOptions;
-import io.github.lindelwa122.cellularStructure.Element;
 import io.github.lindelwa122.cellularStructure.FundamentalElements;
 import io.github.lindelwa122.coords.Coords;
+import io.github.lindelwa122.genes.Gene;
 import io.github.lindelwa122.genes.Genome;
 import io.github.lindelwa122.utilities.Utilities;
 import io.github.lindelwa122.world.World;
 
 public class Creature {
-    private CellularMakeUp makeUp;
     private FundamentalElements type;
-    private DietaryOptions dietaryOptions;
 
     private Hydration hydration = new Hydration(new InternalValue());
     private Hunger hunger = new Hunger(new InternalValue());
@@ -41,40 +37,51 @@ public class Creature {
 
     private Genome genome;
 
-    public Creature(CellularMakeUp makeUp, FundamentalElements type, DietaryOptions dietaryOptions, int gender, World world) {
-        this.makeUp = makeUp;
-        this.type = type;
-        this.dietaryOptions = dietaryOptions;
+    public Creature(int gender, World world) {
+        this.type = (FundamentalElements) Utilities.pickRandom(List.of(
+                    FundamentalElements.CARNYXIS,
+                    FundamentalElements.PREDONIX
+                ));
         this.world = world;
         this.gender = gender;
     }
 
-    public static boolean birthCreature(World world) {
-        Element hydrex = new Element(FundamentalElements.HYDREX, Utilities.random(100));
-        Element ignyra = new Element(FundamentalElements.IGNYRA, Utilities.random(100));
-        Element xeraphin = new Element(FundamentalElements.XERAPHIN, Utilities.random(100));
-        Element humidra = new Element(FundamentalElements.HUMIDRA, Utilities.random(100));
-        Element cryonel = new Element(FundamentalElements.CRYONEL, Utilities.random(100));
-
-        CellularMakeUp makeUp = new CellularMakeUp(hydrex, ignyra, xeraphin, humidra, cryonel, null, null, null, null);
+    public static boolean birthCreature(World world, Creature parent1, Creature parent2) {
+        int gender = Utilities.random(2);
+        Creature c = new Creature(gender, world);
         
-        FundamentalElements type = (FundamentalElements) Utilities.pickRandom(List.of(
-            FundamentalElements.CARNYXIS,
-            FundamentalElements.PREDONIX
-        ));
+        // Create genes
+        int randIndex = Utilities.random(65);
+        Genome genome = new Genome();
 
-        DietaryOptions dietaryOptions = (DietaryOptions) Utilities.pickRandom(List.of(
-            DietaryOptions.A_EATER,
-            DietaryOptions.B_EATER,
-            DietaryOptions.C_EATER,
-            DietaryOptions.D_EATER,
-            DietaryOptions.OPP
-        ));
+        List<Gene> genePool1 = parent1.getGenome().getGenes().subList(0, randIndex);
+        List<Gene> genePool2 = parent2.getGenome().getGenes().subList(randIndex, 64);
 
-        int gender = Utilities.random(1);
+        genePool1.addAll(genePool2);
+        for (Gene gene : genePool1) {
+            gene.resetCreature(c);
+            genome.addGene(gene);
+        }
+        genome.formLayers();
 
-        Creature c = new Creature(makeUp, type, dietaryOptions, gender, world);
-        c.setGenome(Genome.createGenome(c, 4));
+        c.setGenome(genome);
+        boolean added = world.addCreature(c);
+
+        if (added) {
+            Coords currentPosition = world.getCreatureCoords(c);
+            c.currentPosition = currentPosition;
+            c.previousPosition = currentPosition;
+            return true;
+        }
+
+        return false;
+    }
+
+    public static boolean birthCreature(World world) {
+        int gender = Utilities.random(2);
+
+        Creature c = new Creature(gender, world);
+        c.setGenome(Genome.createGenome(c, 64));
         boolean added = world.addCreature(c);
 
         if (added) {
@@ -103,9 +110,13 @@ public class Creature {
         writer.close();
     }
 
-    public void act() {
+    public void nextSimulationRound() {
+        this.age.value().increment();
+        this.energy.value().decrementByValue(5);
+        this.hunger.value().incrementByValue(5);
         this.genome.activateActionNeuron();
     }
+
 
     public void paint(Graphics g, Coords coords) {
         g.setColor(Color.RED);
@@ -173,6 +184,14 @@ public class Creature {
         return this.world;
     }
 
+    public Genome getGenome() {
+        return this.genome;
+    }
+
+    public int getOscillatorPeriod() {
+        return this.oscillatorPeriod;
+    }
+
     // SETTERS
     public void setGenome(Genome genome) {
         this.genome = genome;
@@ -193,5 +212,9 @@ public class Creature {
     public void setCurrentPosition(Coords position) {
         this.previousPosition = currentPosition;
         this.currentPosition = position;
+    }
+
+    public void setPreviousPosition(Coords position) {
+        this.previousPosition = position;
     }
 }

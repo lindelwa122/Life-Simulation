@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.awt.*;
 
 import io.github.lindelwa122.coords.Coords;
@@ -148,7 +149,7 @@ public class World {
     }
 
     public boolean moveCreature(Creature creature, Coords position) {
-        if (!this.isAreaOccupied(position, POINT_SIZE, POINT_SIZE) && this.creatureList.containsKey(creature)) {
+        if (canMoveCreature(creature, position)) {
             this.creatureList.replace(creature, position);
             creature.setCurrentPosition(position);
             return true;
@@ -156,8 +157,33 @@ public class World {
         return false;
     }
 
+    private boolean canMoveCreature(Creature creature, Coords position) {
+        return !this.isAreaOccupied(position, POINT_SIZE, POINT_SIZE) && this.creatureList.containsKey(creature)
+                && !this.newIsOutOfBounds(position.x(), position.y(), POINT_SIZE, POINT_SIZE);
+    }
+
+    public Map<Creature, Coords> getCreaturesMap() {
+        return this.creatureList;
+    }
+
+    public void removeCreature(Creature creature) {
+        if (creatureList.containsKey(creature)) creatureList.remove(creature);
+    }
+
     public Coords getCreatureCoords(Creature creature) {
         return this.creatureList.get(creature);
+    }
+
+    public int getCreatureCount() {
+        return this.creatureList.size();
+    }
+
+    public Set<Creature> getCreatures() {
+        return creatureList.keySet();
+    }
+
+    public void clearWorldOfCreatures() {
+        this.creatureList.clear();
     }
 
     public int getHeight() {
@@ -215,6 +241,13 @@ public class World {
             }
         }
         return (double) count / 8;
+    }
+
+    private boolean newIsOutOfBounds(int x, int y, int width, int height) {
+        if (x < 0 || y < 0) return true;
+        else if (x + width > this.width) return true;
+        else if (y + height > this.height) return true;
+        else return false;
     }
 
     private boolean isOutOfBounds(int x, int y, int dx, int dy) {
@@ -287,9 +320,9 @@ public class World {
         }
     }
 
-    public void nextSimulationRound() {
+    public void nextSimulationRound(int generation) {
         for (Creature creature : creatureList.keySet()) {
-            creature.act();
+            creature.nextSimulationRound();
         }
     }
 
