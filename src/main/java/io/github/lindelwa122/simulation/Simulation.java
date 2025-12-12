@@ -2,7 +2,7 @@ package io.github.lindelwa122.simulation;
 
 import java.awt.Graphics;
 import java.util.ArrayList;
-import java.util.HashSet;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -12,13 +12,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.WindowConstants;
 
-import io.github.lindelwa122.cellularStructure.CellularMakeUp;
-import io.github.lindelwa122.cellularStructure.DietaryOptions;
-import io.github.lindelwa122.cellularStructure.Element;
-import io.github.lindelwa122.cellularStructure.FundamentalElements;
 import io.github.lindelwa122.coords.Coords;
-import io.github.lindelwa122.genes.Gene;
-import io.github.lindelwa122.genes.Genome;
 import io.github.lindelwa122.mbcs.Creature;
 import io.github.lindelwa122.utilities.Utilities;
 import io.github.lindelwa122.world.World;

@@ -157,7 +157,7 @@ public class World {
         return false;
     }
 
-    private boolean canMoveCreature(Creature creature, Coords position) {
+    public boolean canMoveCreature(Creature creature, Coords position) {
         return !this.isAreaOccupied(position, POINT_SIZE, POINT_SIZE) && this.creatureList.containsKey(creature)
                 && !this.newIsOutOfBounds(position.x(), position.y(), POINT_SIZE, POINT_SIZE);
     }
