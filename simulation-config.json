@@ -1,0 +1,71 @@
+{
+  "fastforward": true,
+  "headless": false,
+  "numberOfGenes": 24,
+  "mutationEnabled": true,
+  "mutationRate": 0.025,
+  "mutationAddConnectionRate": 0.01,
+  "mutationRemoveConnectionRate": 0.01,
+  "snapshotInterval": 1,
+  "maxPopulation": 150,
+  "stepsPerGeneration": 120,
+  "maxGenerations": 20000,
+  "outputDir": "output",
+  "survivalCriteria": [
+    {
+      "x1": 0,
+      "y1": 0,
+      "x2": 100,
+      "y2": 100
+    },
+    {
+      "x1": 700,
+      "y1": 0,
+      "x2": 800,
+      "y2": 100
+    },
+    {
+      "x1": 0,
+      "y1": 700,
+      "x2": 100,
+      "y2": 800
+    },
+    {
+      "x1": 700,
+      "y1": 700,
+      "x2": 800,
+      "y2": 800
+    }
+  ],
+  "initialObstacles": [
+    {
+      "name": "cross1a",
+      "orientation": "HORIZONTAL",
+      "fixedCoord": 250,
+      "start": 150,
+      "end": 650
+    },
+    {
+      "name": "cross2",
+      "orientation": "HORIZONTAL",
+      "fixedCoord": 550,
+      "start": 150,
+      "end": 650
+    },
+    {
+      "name": "cross3",
+      "orientation": "VERTICAL",
+      "fixedCoord": 250,
+      "start": 150,
+      "end": 650
+    },
+    {
+      "name": "cross4",
+      "orientation": "VERTICAL",
+      "fixedCoord": 550,
+      "start": 150,
+      "end": 650
+    }
+  ],
+  "generationUpdates": []
+}

@@ -9,6 +9,7 @@ public class MoveForward extends ActionNeuron {
         super(creature, "move_forward_output");
     }
 
+    @Override
     public void activate() {
         Coords previous = this.creature.getPreviousPosition();
         Coords current = this.creature.getCurrentPosition();
@@ -16,18 +17,8 @@ public class MoveForward extends ActionNeuron {
         int diffX = current.x() - previous.x();
         int diffY = current.y() - previous.y();
 
-        Coords newPosition = new Coords(current.x()+(diffX*World.POINT_SIZE), current.y()+(diffY*World.POINT_SIZE));
+        Coords newPosition = new Coords(current.x()+diffX, current.y()+diffY);
         World world = this.creature.getWorld();
         world.moveCreature(creature, newPosition);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        return super.equals(obj);
-    }
-
-    @Override
-    public int hashCode() {
-        return super.hashCode();
     }
 }

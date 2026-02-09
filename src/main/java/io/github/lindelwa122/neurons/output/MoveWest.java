@@ -9,6 +9,7 @@ public class MoveWest extends ActionNeuron {
         super(creature, "move_west_output");
     }
 
+    @Override
     public void activate() {
         Coords current = this.creature.getCurrentPosition();
         Coords newPosition = new Coords(current.x()+(1*World.POINT_SIZE), current.y());

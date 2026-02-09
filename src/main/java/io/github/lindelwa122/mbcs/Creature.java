@@ -3,7 +3,6 @@ package io.github.lindelwa122.mbcs;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.nio.file.Path;
@@ -13,7 +12,10 @@ import io.github.lindelwa122.cellularStructure.FundamentalElements;
 import io.github.lindelwa122.coords.Coords;
 import io.github.lindelwa122.genes.Gene;
 import io.github.lindelwa122.genes.Genome;
+import io.github.lindelwa122.simulation.CreationOfNewborn;
+import io.github.lindelwa122.simulation.SimulationConfig;
 import io.github.lindelwa122.utilities.Utilities;
+import io.github.lindelwa122.world.Climate;
 import io.github.lindelwa122.world.World;
 
 public class Creature {
@@ -36,6 +38,7 @@ public class Creature {
     private int gender;
 
     private Genome genome;
+    private Color visualColor;
 
     public Creature(int gender, World world) {
         this.type = (FundamentalElements) Utilities.pickRandom(List.of(
@@ -46,26 +49,59 @@ public class Creature {
         this.gender = gender;
     }
 
-    public static boolean birthCreature(World world, Creature parent1, Creature parent2) {
+    public static boolean birthCreature(CreationOfNewborn creationContext) {
+        World world = creationContext.world();
+        Creature parent1 = creationContext.parent1();
+        Creature parent2 = creationContext.parent2();
+
+        SimulationConfig config = creationContext.config();
+        boolean mutationEnabled = config.mutationEnabled != null ? config.mutationEnabled : false;
+        double mutationRate = config.mutationRate != null ? config.mutationRate : 0.0;
+        double mutationAddConnectionRate = config.mutationAddConnectionRate != null ? config.mutationAddConnectionRate : 0.0;
+        double mutationRemoveConnectionRate = config.mutationRemoveConnectionRate != null ? config.mutationRemoveConnectionRate : 0.0;
+
+        Climate birthRegion = creationContext.birthRegion();
+
         int gender = Utilities.random(2);
         Creature c = new Creature(gender, world);
         
-        // Create genes
-        int randIndex = Utilities.random(65);
+        // Create genes by cloning parent genes for the new creature (avoid sharing instances)
         Genome genome = new Genome();
+        List<Gene> p1Genes = parent1.getGenome().getGenes();
+        List<Gene> p2Genes = parent2.getGenome().getGenes();
+        int maxGenes = Math.max(p1Genes.size(), p2Genes.size());
+        int randIndex = Utilities.random(maxGenes + 1);
 
-        List<Gene> genePool1 = parent1.getGenome().getGenes().subList(0, randIndex);
-        List<Gene> genePool2 = parent2.getGenome().getGenes().subList(randIndex, 64);
+        for (int i = 0; i < maxGenes; i++) {
+            Gene sourceGene = null;
+            if (i < randIndex) {
+                if (i < p1Genes.size()) sourceGene = p1Genes.get(i);
+            } else {
+                if (i < p2Genes.size()) sourceGene = p2Genes.get(i);
+            }
 
-        genePool1.addAll(genePool2);
-        for (Gene gene : genePool1) {
-            gene.resetCreature(c);
-            genome.addGene(gene);
+            if (sourceGene != null) {
+                Gene cloned = sourceGene.cloneForCreature(c);
+                if (mutationEnabled && mutationRate > 0) {
+                    cloned.mutate(mutationRate);
+                }
+                genome.addGenes(cloned);
+            }
         }
         genome.formLayers();
 
+        // Apply connection mutations (add/remove genes)
+        if (mutationEnabled) {
+            if (mutationAddConnectionRate > 0 && Math.random() < mutationAddConnectionRate) {
+                genome.addGene(c);
+            }
+            if (mutationRemoveConnectionRate > 0 && Math.random() < mutationRemoveConnectionRate) {
+                genome.removeGene();
+            }
+        }
+
         c.setGenome(genome);
-        boolean added = world.addCreature(c);
+        boolean added = world.addCreature(c, birthRegion);
 
         if (added) {
             Coords currentPosition = world.getCreatureCoords(c);
@@ -78,10 +114,14 @@ public class Creature {
     }
 
     public static boolean birthCreature(World world) {
+        return birthCreature(world, 8);
+    }
+
+    public static boolean birthCreature(World world, int numberOfGenes) {
         int gender = Utilities.random(2);
 
         Creature c = new Creature(gender, world);
-        c.setGenome(Genome.createGenome(c, 64));
+        c.setGenome(Genome.createGenome(c, numberOfGenes));
         boolean added = world.addCreature(c);
 
         if (added) {
@@ -96,18 +136,22 @@ public class Creature {
 
     public void recordBrain() {
         String projectRoot = System.getProperty("user.dir");
-        Path path = Path.of(projectRoot, "src", "main", "java", "io", "github", "lindelwa122", "brain", "brain-scan.txt");
-
-        FileOutputStream fileOutputStream = null;
+        Path path = Path.of(projectRoot, "brain-scan.txt");
+        
         try {
-            fileOutputStream = new FileOutputStream(new File(path.toString()), true);
-        } catch (FileNotFoundException e) {
+            // Create parent directories if needed
+            if (path.getParent() != null) {
+                java.nio.file.Files.createDirectories(path.getParent());
+            }
+            
+            FileOutputStream fileOutputStream = new FileOutputStream(new File(path.toString()), true);
+            PrintWriter writer = new PrintWriter(fileOutputStream);
+            writer.println(genome.toString());
+            writer.close();
+        } catch (Exception e) {
+            System.err.println("Failed to record brain: " + e.getMessage());
             e.printStackTrace();
         }
-
-        PrintWriter writer = new PrintWriter(fileOutputStream);
-        writer.println(genome.toString());
-        writer.close();
     }
 
     public void nextSimulationRound() {
@@ -119,7 +163,8 @@ public class Creature {
 
 
     public void paint(Graphics g, Coords coords) {
-        g.setColor(Color.RED);
+        Color displayColor = (this.visualColor != null) ? this.visualColor : Color.RED;
+        g.setColor(displayColor);
         g.fillOval(coords.x(), coords.y(), World.POINT_SIZE, World.POINT_SIZE);
     }
 
@@ -195,6 +240,7 @@ public class Creature {
     // SETTERS
     public void setGenome(Genome genome) {
         this.genome = genome;
+        this.visualColor = io.github.lindelwa122.utilities.GenomeColorMapper.computeVisualColor(genome);
     }
 
     public void setOscillatorPeriod(int period) {

@@ -6,7 +6,7 @@ import io.github.lindelwa122.neurons.Neuron;
 import io.github.lindelwa122.world.World;
 
 public class BlockageEast extends Neuron {
-    protected BlockageEast(Creature creature) {
+    public BlockageEast(Creature creature) {
         super(creature, "blockage_east_external");
     }
 
@@ -16,9 +16,9 @@ public class BlockageEast extends Neuron {
         Coords eastCoords = new Coords(current.x()-(1*World.POINT_SIZE), current.y());
 
         World world = this.creature.getWorld();
-        boolean isOccupied = world.canMoveCreature(creature, eastCoords);
+        boolean isNotOccupied = world.canMoveCreature(creature, eastCoords);
 
-        if (isOccupied) return 1; else return 0;
+        if (isNotOccupied) return 0; else return 1;
     }
     
 }
