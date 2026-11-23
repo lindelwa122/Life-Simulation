@@ -36,6 +36,10 @@ public class Simulation extends JPanel {
     private static SimulationConfig config = null;
     // map optional names to obstacle ids returned by World
     private static final Map<String, Integer> namedObstacles = new HashMap<>();
+    // Track if an emergency reseed has already been attempted in this run. Multiple repeated
+    // reseeds masked the underlying cause of mass die-offs; only allow one automated reseed
+    // per process to aid debugging.
+    private static boolean reseedAttempted = false;
 
     private final boolean headless;
     private boolean currentSkipPainting = false;
@@ -86,20 +90,35 @@ public class Simulation extends JPanel {
 
         int numberOfGenes = 8;
         boolean headless = false;
+        boolean debugBrainScan = false;
+        boolean regionalRepopulation = true;
         int maxPopulation = 100;
         int previousSurvivors = 0;
         int stepsPerGeneration = 100;
         int maxGenerations = 20_000;
+        int movementEnergyCost = 1;
+        int reproductionEnergyCost = 50;
 
         if (config != null) {
             if (config.numberOfGenes != null) numberOfGenes = config.numberOfGenes;
             if (config.headless != null) headless = config.headless;
+            if (config.debugBrainScan != null) debugBrainScan = config.debugBrainScan;
+            if (config.debugGenomeAudit != null) {
+                // set system property so Genome.formLayers() can log pruning when enabled
+                System.setProperty("debug.genome.audit", String.valueOf(config.debugGenomeAudit));
+            }
+            if (config.regionalRepopulation != null) regionalRepopulation = config.regionalRepopulation;
             if (config.maxPopulation != null) maxPopulation = config.maxPopulation;
             if (config.stepsPerGeneration != null) stepsPerGeneration = config.stepsPerGeneration;
             if (config.maxGenerations != null) maxGenerations = config.maxGenerations;
+            if (config.movementEnergyCost != null) movementEnergyCost = config.movementEnergyCost;
+            if (config.reproductionEnergyCost != null) reproductionEnergyCost = config.reproductionEnergyCost;
         }
 
+        Creature.configureEnergyParameters(movementEnergyCost, reproductionEnergyCost);
+
         Simulation simulation = new Simulation(numberOfGenes, headless, maxPopulation);
+        world.setBrainScanEnabled(debugBrainScan);
 
         // apply initial obstacles from config
         if (config != null && config.initialObstacles != null) {
@@ -212,7 +231,15 @@ public class Simulation extends JPanel {
                 }
 
                 simulation.nextSimulationRound(gen);
-                if (!currentFastforward) Thread.sleep(100);
+            }
+
+            System.out.println("Before survival filtering: creatureCount=" + world.getCreatureCount());
+            int __dbg_count = 0;
+            for (Creature __dbg_c : world.getCreaturesList()) {
+                if (__dbg_count < 10) {
+                    System.out.println("  Creature[" + __dbg_count + "] pos=" + __dbg_c.getCurrentPosition() + " energy=" + __dbg_c.getEnergy());
+                }
+                __dbg_count++;
             }
 
             List<Creature> toKill = new ArrayList<>(world.getCreaturesList());
@@ -236,8 +263,10 @@ public class Simulation extends JPanel {
                         }
                     }
                 } else {
-                    // old behaviour: survive if on right half (keep continuity)
-                    survives = position.x() >= (world.getWidth() / 2);
+                    // Default challenge mode: no hard-coded survival box. The ecology is driven by energy,
+                    // food availability, and optional config-defined home regions rather than an artificial
+                    // "right half of the map" survival rule.
+                    survives = true;
                 }
 
                 if (survives) toKill.remove(creature);
@@ -319,36 +348,82 @@ public class Simulation extends JPanel {
             // This allows for more diverse survival strategies to emerge since different areas may require 
             // different adaptations to survive, whereas if we just picked the top X survivors regardless of 
             // position we might end up with a less diverse gene pool that is only adapted to surviving in one 
-            // specific area of the world
-            List<Creature> hotRegionSurvivors = new ArrayList<>();
-            List<Creature> coldRegionSurvivors = new ArrayList<>();
-            List<Creature> dryRegionSurvivors = new ArrayList<>();
-            List<Creature> wetRegionSurvivors = new ArrayList<>();
-            
+            // specific area of the world.
+            // The regional breeding mode is the default challenge behaviour, but can be disabled for a
+            // global repopulation experiment via config.
             Set<Creature> survivors = world.getCreatures();
-            for (Creature creature : survivors) {
-                Coords position = creature.getCurrentPosition();
-                Climate climate = world.getClimateOnCoords(position);
-                switch (climate) {
-                    case HOT -> hotRegionSurvivors.add(creature);
-                    case COLD -> coldRegionSurvivors.add(creature);
-                    case DRY -> dryRegionSurvivors.add(creature);
-                    case WET -> wetRegionSurvivors.add(creature);
+
+            if (regionalRepopulation) {
+                world.clearWorldOfCreatures();
+
+                List<Creature> hotRegionSurvivors = new ArrayList<>();
+                List<Creature> coldRegionSurvivors = new ArrayList<>();
+                List<Creature> dryRegionSurvivors = new ArrayList<>();
+                List<Creature> wetRegionSurvivors = new ArrayList<>();
+
+                for (Creature creature : survivors) {
+                    Coords position = creature.getCurrentPosition();
+                    Climate climate = world.getClimateOnCoords(position);
+                    switch (climate) {
+                        case HOT -> hotRegionSurvivors.add(creature);
+                        case COLD -> coldRegionSurvivors.add(creature);
+                        case DRY -> dryRegionSurvivors.add(creature);
+                        case WET -> wetRegionSurvivors.add(creature);
+                    }
+                }
+
+                int regionalCount = hotRegionSurvivors.size() + coldRegionSurvivors.size() + dryRegionSurvivors.size() + wetRegionSurvivors.size();
+                if (regionalCount < 2) {
+                    // Fallback: if regional spawning would erase the whole species, keep the survivors as a
+                    // breeding pool and repopulate globally instead.
+                    regionalRepopulation = false;
+                }
+
+                if (!regionalRepopulation) {
+                    List<Creature> globalSurvivors = new ArrayList<>(survivors);
+                    world.clearWorldOfCreatures();
+                    if (globalSurvivors.size() > 1) {
+                        for (int i = 0; i < world.getMaxPopulation(); i++) {
+                            Creature parent1 = (Creature) Utilities.pickRandom(simulation.convertToObjects(globalSurvivors));
+                            Creature parent2 = (Creature) Utilities.pickRandom(simulation.convertToObjects(globalSurvivors));
+                            if (!parent1.canReproduce() || !parent2.canReproduce()) continue;
+                            Climate birthClimate = Climate.values()[Utilities.random(Climate.values().length)];
+                            CreationOfNewborn creationContext = new CreationOfNewborn(world, parent1, parent2, config, birthClimate);
+                            Creature.birthCreature(creationContext);
+                            parent1.spendEnergy(reproductionEnergyCost);
+                            parent2.spendEnergy(reproductionEnergyCost);
+                        }
+                    }
+                } else {
+                    // For now eliminate the gender mating criteria and just mate randomly across all survivors 
+                    // in the generation to give the best chance for diverse gene combinations and interesting 
+                    // adaptations to emerge, but in the future we could consider adding it back in or even adding 
+                    // more complex mating criteria based on traits or behaviors if we find that it would lead to 
+                    // more interesting outcomes
+                    repopulateArea(hotRegionSurvivors, Climate.HOT, simulation);
+                    repopulateArea(coldRegionSurvivors, Climate.COLD, simulation);
+                    repopulateArea(dryRegionSurvivors, Climate.DRY, simulation);
+                    repopulateArea(wetRegionSurvivors, Climate.WET, simulation);
+                }
+            } else {
+                // Global repopulation uses the current survivors only as a parent pool. The world is reset
+                // to the target population size using new births, not by keeping the survivors alive.
+                List<Creature> globalSurvivors = new ArrayList<>(survivors);
+                world.clearWorldOfCreatures();
+
+                if (globalSurvivors.size() > 1) {
+                    for (int i = 0; i < world.getMaxPopulation(); i++) {
+                        Creature parent1 = (Creature) Utilities.pickRandom(simulation.convertToObjects(globalSurvivors));
+                        Creature parent2 = (Creature) Utilities.pickRandom(simulation.convertToObjects(globalSurvivors));
+                        if (!parent1.canReproduce() || !parent2.canReproduce()) continue;
+                        Climate birthClimate = Climate.values()[Utilities.random(Climate.values().length)];
+                        CreationOfNewborn creationContext = new CreationOfNewborn(world, parent1, parent2, config, birthClimate);
+                        Creature.birthCreature(creationContext);
+                        parent1.spendEnergy(reproductionEnergyCost);
+                        parent2.spendEnergy(reproductionEnergyCost);
+                    }
                 }
             }
-
-            world.clearWorldOfCreatures();
-
-            // For now eliminate the gender mating criteria and just mate randomly across all survivors 
-            // in the generation to give the best chance for diverse gene combinations and interesting 
-            // adaptations to emerge, but in the future we could consider adding it back in or even adding 
-            // more complex mating criteria based on traits or behaviors if we find that it would lead to 
-            // more interesting outcomes
-
-            repopulateArea(hotRegionSurvivors, Climate.HOT, simulation);
-            repopulateArea(coldRegionSurvivors, Climate.COLD, simulation);
-            repopulateArea(dryRegionSurvivors, Climate.DRY, simulation);
-            repopulateArea(wetRegionSurvivors, Climate.WET, simulation);
 
             // List<Creature> males = new ArrayList<>();
             // List<Creature> females = new ArrayList<>();
@@ -368,8 +443,26 @@ public class Simulation extends JPanel {
             // world.doCreatureBrainScan();
 
             if (world.getCreatureCount() == 0) {
-                System.out.println("All creatures died out at generation " + gen + ". Ending simulation.");
-                break;
+                System.out.println("All creatures died out at generation " + gen + ".");
+                if (reseedAttempted) {
+                    System.out.println("Emergency reseed already attempted earlier in this run. Ending simulation to allow inspection.");
+                    break;
+                }
+
+                System.out.println("Attempting one emergency reseed (only once per run) to aid debugging.");
+                int reseeded = 0;
+                for (int i = 0; i < maxPopulation; i++) {
+                    boolean added = Creature.birthCreature(world, numberOfGenes);
+                    if (added) reseeded++;
+                }
+
+                System.out.println("Reseed produced " + reseeded + " creatures.");
+                reseedAttempted = true;
+
+                if (world.getCreatureCount() == 0) {
+                    System.out.println("Reseed failed; ending simulation.");
+                    break;
+                }
             }
         }
     }
@@ -380,9 +473,12 @@ public class Simulation extends JPanel {
             for (int i = 0; i < world.getMaxPopulation() / 4; i++) {
                 Creature parent1 = (Creature) Utilities.pickRandom(simulation.convertToObjects(survivors));
                 Creature parent2 = (Creature) Utilities.pickRandom(simulation.convertToObjects(survivors));
+                if (!parent1.canReproduce() || !parent2.canReproduce()) continue;
 
                 CreationOfNewborn creationContext = new CreationOfNewborn(world, parent1, parent2, config, climate);
                 Creature.birthCreature(creationContext);
+                parent1.spendEnergy(Creature.getReproductionEnergyCost());
+                parent2.spendEnergy(Creature.getReproductionEnergyCost());
             }
         }
     }

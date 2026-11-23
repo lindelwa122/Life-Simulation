@@ -16,9 +16,14 @@ public class SimulationConfig {
     public List<ObstacleSpec> initialObstacles;
     public List<GenerationUpdate> generationUpdates;
     public boolean skipPainting;
+    public Boolean debugBrainScan;
+    public Boolean debugGenomeAudit;
+    public Boolean regionalRepopulation;
     public Integer maxPopulation;
     public Integer stepsPerGeneration;
     public Integer maxGenerations;
+    public Integer movementEnergyCost;
+    public Integer reproductionEnergyCost;
 
     public static class SurvivalBox {
         public Integer x1;
@@ -70,4 +75,5 @@ public class SimulationConfig {
         public Integer dx;
         public Integer dy;
     }
+
 }

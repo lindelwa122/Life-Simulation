@@ -13,10 +13,10 @@ public class BlockageSouth extends Neuron {
     @Override
     public double value() {
         Coords current = this.creature.getCurrentPosition();
-        Coords westCoords = new Coords(current.x(), current.y()+(1*World.POINT_SIZE));
+        Coords southCoords = new Coords(current.x(), current.y() + (1 * World.POINT_SIZE));
 
         World world = this.creature.getWorld();
-        boolean isNotOccupied = world.canMoveCreature(creature, westCoords);
+        boolean isNotOccupied = world.canMoveCreature(creature, southCoords);
 
         if (isNotOccupied) return 0; else return 1;
     }

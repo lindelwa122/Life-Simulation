@@ -17,79 +17,39 @@ public class GenomeColorMapper {
             return DEFAULT_COLOR;
         }
 
-        double sumR = 0.0, sumG = 0.0, sumB = 0.0;
-        double totalWeight = 0.0;
-
         List<Gene> genes = genome.getGenes();
-        for (Gene gene : genes) {
-            double weight = gene.getWeight();
-            double normWeight = Math.min(1.0, Math.abs(weight) / WEIGHT_MAX);
 
-            Neuron source = gene.getSource();
-            Neuron sink = gene.getSink();
-
-            // Determine roles: source -> red, sink -> blue, internal -> green
-            double r = getRoleRed(source) * normWeight;
-            double g = getRoleGreen(source, sink) * normWeight;
-            double b = getRoleBlue(sink) * normWeight;
-
-            // Accumulate weighted by norm weight
-            sumR += r * normWeight;
-            sumG += g * normWeight;
-            sumB += b * normWeight;
-            totalWeight += normWeight;
+        // Compute simple statistics
+        double avgAbsWeight = genes.stream().mapToDouble(g -> Math.abs(g.getWeight())).average().orElse(0.0) / WEIGHT_MAX; // [0,1]
+        double avgWeight = genes.stream().mapToDouble(Gene::getWeight).average().orElse(0.0) / WEIGHT_MAX; // [-1,1]
+        double variance = 0.0;
+        double mean = genes.stream().mapToDouble(Gene::getWeight).average().orElse(0.0);
+        for (Gene g : genes) {
+            double d = g.getWeight() - mean;
+            variance += d * d;
         }
+        variance = genes.size() > 0 ? Math.sqrt(variance / genes.size()) / WEIGHT_MAX : 0.0; // normalized stddev [0,1]
 
-        // Normalize by total weight
-        if (totalWeight > 0.0) {
-            double finalR = sumR / totalWeight;
-            double finalG = sumG / totalWeight;
-            double finalB = sumB / totalWeight;
+        long internalCount = genes.stream().filter(g -> (g.getSource() instanceof InternalNeuron) || (g.getSink() instanceof InternalNeuron)).count();
+        double internalFraction = (double) internalCount / (double) genes.size();
 
-            return applyVisibilityConstraints(finalR, finalG, finalB);
-        }
+        // Stable hash for hue
+        int hash = Math.abs(genome.toString().hashCode());
+        float hue = (hash % 360) / 360.0f;
 
-        return DEFAULT_COLOR;
-    }
+        // Slightly rotate hue based on sign of avg weight and internal fraction
+        hue = (hue + (float) (avgWeight * 0.1) + (float) (internalFraction * 0.05)) % 1.0f;
 
-    private static double getRoleRed(Neuron neuron) {
-        // Source contribution is always red, regardless of type
-        return 1.0;
-    }
+        // Saturation boosted by variance and avgAbsWeight, clamp to [0.4, 1.0]
+        float saturation = (float) Math.min(1.0, 0.4 + variance * 0.6 + avgAbsWeight * 0.3);
 
-    private static double getBlueG(Neuron neuron) {
-        // Sink contribution is always blue, regardless of type
-        return 1.0;
-    }
+        // Brightness based on avgAbsWeight and variance so strong genomes are brighter
+        float brightness = (float) Math.min(1.0, 0.55 + avgAbsWeight * 0.35 + variance * 0.1);
 
-    private static double getRoleGreen(Neuron source, Neuron sink) {
-        // Green if either source or sink is internal
-        if (source instanceof InternalNeuron || sink instanceof InternalNeuron) {
-            return 1.0;
-        }
-        return 0.0;
-    }
-
-    private static double getRoleBlue(Neuron neuron) {
-        // Sink contribution is always blue, regardless of type
-        return 1.0;
-    }
-
-    private static Color applyVisibilityConstraints(double r, double g, double b) {
-        // Convert to HSB for saturation/brightness boost
-        float[] hsb = Color.RGBtoHSB(
-            (int) Math.round(r * 255),
-            (int) Math.round(g * 255),
-            (int) Math.round(b * 255),
-            null
-        );
-
-        // Enforce minimum saturation and brightness
-        hsb[1] = Math.max(hsb[1], 0.45f); // saturation >= 0.45
-        hsb[2] = Math.max(hsb[2], 0.45f); // brightness >= 0.45
-
-        // Convert back to RGB
-        int rgb = Color.HSBtoRGB(hsb[0], hsb[1], hsb[2]);
+        int rgb = Color.HSBtoRGB(hue, saturation, brightness);
         return new Color(rgb);
     }
+
+    // legacy helpers removed — new mapping is HSB-based and more distinctive
+    
 }

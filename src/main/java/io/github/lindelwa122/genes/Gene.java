@@ -66,6 +66,11 @@ public class Gene {
 
     private static Random random = new Random();
 
+    // For deterministic tests, allow seeding the random generator used for gene creation
+    public static void setRandomSeed(long seed) {
+        random = new Random(seed);
+    }
+
     public Gene(int sourceType, Neuron source, int sinkType, Neuron sink, double weight) {
         this.sourceType = sourceType;
         this.source = source;
@@ -98,6 +103,14 @@ public class Gene {
 
     public boolean containsSensoryInput() {
         return this.sourceType == 1;
+    }
+
+    public int getSourceType() {
+        return this.sourceType;
+    }
+
+    public int getSinkType() {
+        return this.sinkType;
     }
 
     public void resetCreature(Creature creature) {
@@ -203,7 +216,9 @@ public class Gene {
             new PheromoneWest(creature),
             new PheromoneForward(creature),
             new PheromoneDensity(creature),
-            new ClimateOnPosition(creature)
+            new ClimateOnPosition(creature),
+            new io.github.lindelwa122.neurons.sensory_inputs.external.NearestNeighborDistance(creature),
+            new io.github.lindelwa122.neurons.sensory_inputs.external.NeighborCount(creature)
         );
     }
 
@@ -260,12 +275,19 @@ public class Gene {
         if (obj == null || getClass() != obj.getClass()) return false;
 
         Gene gene = (Gene) obj;
-        return Objects.equals(source, gene.source) && Objects.equals(sink, gene.sink);
+        String src = (this.source == null) ? "null" : this.source.getClass().getName() + ":" + System.identityHashCode(this.source);
+        String snk = (this.sink == null) ? "null" : this.sink.getClass().getName() + ":" + System.identityHashCode(this.sink);
+        String otherSrc = (gene.source == null) ? "null" : gene.source.getClass().getName() + ":" + System.identityHashCode(gene.source);
+        String otherSnk = (gene.sink == null) ? "null" : gene.sink.getClass().getName() + ":" + System.identityHashCode(gene.sink);
+        return this.sourceType == gene.sourceType && this.sinkType == gene.sinkType
+                && src.equals(otherSrc) && snk.equals(otherSnk);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.source, this.sink);
+        String src = (this.source == null) ? "null" : this.source.getClass().getName() + ":" + System.identityHashCode(this.source);
+        String snk = (this.sink == null) ? "null" : this.sink.getClass().getName() + ":" + System.identityHashCode(this.sink);
+        return Objects.hash(this.sourceType, this.sinkType, src, snk);
     }
 
     @Override

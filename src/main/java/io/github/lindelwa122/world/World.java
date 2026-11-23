@@ -1,7 +1,9 @@
 package io.github.lindelwa122.world;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -54,9 +56,17 @@ public class World {
     // Keep track of maxPopulation here so creatures can update it
     private int maxPopulation;
     private final double populationChangeRate = 0.9;
+    private boolean brainScanEnabled = false;
 
     public int getMaxPopulation() {
         return maxPopulation;
+    }
+
+    public void setBrainScanEnabled(boolean enabled) {
+        this.brainScanEnabled = enabled;
+        for (Creature creature : creatureList) {
+            creature.setBrainScanEnabled(enabled);
+        }
     }
 
     public void setMaxPopulation(int maxPopulation) {
@@ -84,11 +94,14 @@ public class World {
     }
 
     private boolean doRectsOverlap(Coords topLeft1, Coords bottomRight1, Coords topLeft2, Coords bottomRight2) {
-        if (topLeft1.x() > bottomRight2.x() || topLeft2.x() > bottomRight1.x())
+        // Treat edge-to-edge contact as non-overlapping so creatures can stand beside one another
+        // without occupying the same space. The previous logic used inclusive checks, which made
+        // touching rectangles count as overlaps and forced a one-cell gap.
+        if (topLeft1.x() >= bottomRight2.x() || topLeft2.x() >= bottomRight1.x())
             return false;
 
         // If one rectangle is above the other
-        return !(bottomRight1.y() < topLeft2.y() || bottomRight2.y() < topLeft1.y());
+        return !(bottomRight1.y() <= topLeft2.y() || bottomRight2.y() <= topLeft1.y());
     }
 
     private boolean isAreaOccupiedByCreature(Coords startCoords, Coords endCoords) {
@@ -209,7 +222,7 @@ public class World {
     }
 
     public boolean canMoveCreature(Creature creature, Coords position) {
-        Coords endCoords = new Coords(position.x(), position.y());
+        Coords endCoords = new Coords(position.x() + POINT_SIZE, position.y() + POINT_SIZE);
         return !this.isAreaOccupiedByCreature(position, endCoords, creature)
             && !this.isAreaOccupiedByObstacle(position, endCoords)
             && this.creatureList.contains(creature)
@@ -368,7 +381,12 @@ public class World {
     }
 
     public void doCreatureBrainScan() {
+        if (!this.brainScanEnabled) {
+            return;
+        }
+
         for (Creature creature : creatureList) {
+            creature.setBrainScanEnabled(true);
             creature.recordBrain();
         }
     }
@@ -391,7 +409,6 @@ public class World {
 
     public void nextSimulationRound(int generation) {
         for (Creature creature : creatureList) {
-            // Update creature
             creature.nextSimulationRound();
         }
 
@@ -410,6 +427,55 @@ public class World {
         }
         this.murderedOnCurrentGeneration += murderedCreatures.size();
         murderedCreatures.clear();
+
+        // Safety: ensure no creature is positioned inside an obstacle due to movement or rounding bugs.
+        // If any creature is found inside an obstacle, attempt to relocate it to a nearby free tile.
+        for (Creature creature : new ArrayList<>(this.creatureList)) {
+            if (!canMoveCreature(creature, creature.getCurrentPosition())) {
+                Coords relocated = findNearestFreeSpot(creature.getCurrentPosition(), creature);
+                if (relocated != null) {
+                    creature.setCurrentPosition(relocated);
+                } else {
+                    // If unable to find a free spot after exhaustive tries, remove the creature to avoid stuck state
+                    this.removeCreature(creature);
+                }
+            }
+        }
+    }
+
+    /**
+     * Checks whether a creature (optionally excluding an existing creature) can be placed at the given start coordinates.
+     */
+    public boolean canPlaceCreatureAt(Coords startCoords, Creature excludeCreature) {
+        Coords endCoords = new Coords(startCoords.x() + POINT_SIZE, startCoords.y() + POINT_SIZE);
+        return !this.isAreaOccupiedByCreature(startCoords, endCoords, excludeCreature)
+            && !this.isAreaOccupiedByObstacle(startCoords, endCoords)
+            && !this.newIsOutOfBounds(startCoords.x(), startCoords.y(), POINT_SIZE, POINT_SIZE);
+    }
+
+    private Coords findNearestFreeSpot(Coords origin, Creature excludeCreature) {
+        int maxRadius = Math.max(this.width, this.height);
+        // Try random sampling first for performance
+        int maxAttempts = 500;
+        for (int i = 0; i < maxAttempts; i++) {
+            Coords candidate = new Coords(
+                Utilities.random(this.width / POINT_SIZE) * POINT_SIZE,
+                Utilities.random(this.height / POINT_SIZE) * POINT_SIZE
+            );
+            if (canPlaceCreatureAt(candidate, excludeCreature)) return candidate;
+        }
+
+        // Fallback to expanding spiral search
+        for (int r = 0; r < Math.max(this.width, this.height); r += POINT_SIZE) {
+            for (int dx = -r; dx <= r; dx += POINT_SIZE) {
+                for (int dy = -r; dy <= r; dy += POINT_SIZE) {
+                    Coords candidate = new Coords(origin.x() + dx, origin.y() + dy);
+                    if (candidate.x() < 0 || candidate.y() < 0 || candidate.x() >= this.width || candidate.y() >= this.height) continue;
+                    if (canPlaceCreatureAt(candidate, excludeCreature)) return candidate;
+                }
+            }
+        }
+        return null;
     }
 
     public boolean killCreatureAt(Coords coords) {
@@ -558,16 +624,19 @@ public class World {
             // Fail silently, creature won't be painted this tick but will be painted in the next tick when the bug hopefully resolves itself
         }
 
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setStroke(new BasicStroke(3f));
+        g2.setColor(new Color(255, 255, 0, 220));
         for (SimulationConfig.SurvivalBox survivalBox : survivalBoxes) {
             if (survivalBox != null && survivalBox.isValid()) {
-                g.setColor(Color.YELLOW);
-                g.drawRect(
-                    survivalBox.x1, 
-                    survivalBox.y1, 
-                    survivalBox.x2 - survivalBox.x1, 
-                    survivalBox.y2 - survivalBox.y1
+                g2.drawRect(
+                    survivalBox.x1,
+                    survivalBox.y1,
+                    Math.max(1, survivalBox.x2 - survivalBox.x1),
+                    Math.max(1, survivalBox.y2 - survivalBox.y1)
                 );
             }
         }
+        g2.dispose();
     }
 }

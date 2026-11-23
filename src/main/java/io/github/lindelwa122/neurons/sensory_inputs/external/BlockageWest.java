@@ -13,7 +13,7 @@ public class BlockageWest extends Neuron {
     @Override
     public double value() {
         Coords current = this.creature.getCurrentPosition();
-        Coords westCoords = new Coords(current.x()+(1*World.POINT_SIZE), current.y());
+        Coords westCoords = new Coords(current.x() - (1 * World.POINT_SIZE), current.y());
 
         World world = this.creature.getWorld();
         boolean isNotOccupied = world.canMoveCreature(creature, westCoords);

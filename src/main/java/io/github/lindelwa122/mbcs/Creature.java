@@ -19,6 +19,9 @@ import io.github.lindelwa122.world.Climate;
 import io.github.lindelwa122.world.World;
 
 public class Creature {
+    private static int movementEnergyCost = 1;
+    private static int reproductionEnergyCost = 50;
+
     private FundamentalElements type;
 
     private Hydration hydration = new Hydration(new InternalValue());
@@ -39,6 +42,7 @@ public class Creature {
 
     private Genome genome;
     private Color visualColor;
+    private boolean brainScanEnabled = false;
 
     public Creature(int gender, World world) {
         this.type = (FundamentalElements) Utilities.pickRandom(List.of(
@@ -134,16 +138,23 @@ public class Creature {
         return false;
     }
 
+    public void setBrainScanEnabled(boolean enabled) {
+        this.brainScanEnabled = enabled;
+    }
+
     public void recordBrain() {
+        if (!this.brainScanEnabled) {
+            return;
+        }
+
         String projectRoot = System.getProperty("user.dir");
         Path path = Path.of(projectRoot, "brain-scan.txt");
-        
+
         try {
-            // Create parent directories if needed
             if (path.getParent() != null) {
                 java.nio.file.Files.createDirectories(path.getParent());
             }
-            
+
             FileOutputStream fileOutputStream = new FileOutputStream(new File(path.toString()), true);
             PrintWriter writer = new PrintWriter(fileOutputStream);
             writer.println(genome.toString());
@@ -154,10 +165,19 @@ public class Creature {
         }
     }
 
+    public static void configureEnergyParameters(int movementCost, int reproductionCost) {
+        movementEnergyCost = Math.max(0, movementCost);
+        reproductionEnergyCost = Math.max(1, reproductionCost);
+    }
+
+    public static int getReproductionEnergyCost() {
+        return reproductionEnergyCost;
+    }
+
     public void nextSimulationRound() {
         this.age.value().increment();
-        this.energy.value().decrementByValue(5);
-        this.hunger.value().incrementByValue(5);
+        this.energy.value().decrementByValue(movementEnergyCost);
+        this.hunger.value().incrementByValue(2);
         this.genome.activateActionNeuron();
     }
 
@@ -215,6 +235,18 @@ public class Creature {
 
     public int getEnergy() {
         return this.energy.value().getValue();
+    }
+
+    public void gainEnergy(int amount) {
+        this.energy.value().incrementByValue(amount);
+    }
+
+    public void spendEnergy(int amount) {
+        this.energy.value().decrementByValue(amount);
+    }
+
+    public boolean canReproduce() {
+        return this.energy.value().getValue() >= reproductionEnergyCost;
     }
 
     public int getHealth() {

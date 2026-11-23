@@ -69,18 +69,131 @@ public class Genome {
     }
 
     public void formLayers() {
+        // Prune disconnected or duplicate genes before forming layers
+        int before = this.genes.size();
+        this.pruneGenes();
+        int after = this.genes.size();
+
+        // Optionally log pruning results when a debug flag is enabled via system property
+        if (Boolean.getBoolean("debug.genome.audit")) {
+            System.out.println("Genome pruning removed " + (before - after) + " genes (" + before + " -> " + after + ")");
+        }
+
         this.layers = this.layerConnections();
         buildOptimizedStructure();
+
+        // Validate structure: ensure at least one sensory input and one action reachable
+        if (layers == null || layers.isEmpty() || actionNeuronList == null || actionNeuronList.isEmpty()) {
+            if (Boolean.getBoolean("debug.genome.audit")) {
+                System.err.println("Genome validation failed: no layers or no action neurons found. Genes: " + this.genes.size());
+            }
+        }
+    }
+
+    /**
+     * Remove duplicate genes and prune genes that are not reachable from any sensory input
+     * (i.e., disconnected subgraphs). This helps keep networks compact and avoids
+     * keeping isolated neurons that never influence outputs.
+     */
+    private void pruneGenes() {
+        // Remove exact duplicates first using equals/hashCode.
+        List<Gene> unique = new ArrayList<>();
+        for (Gene g : this.genes) {
+            if (!unique.contains(g)) unique.add(g);
+        }
+
+        if (unique.isEmpty()) {
+            this.genes = unique;
+            this.structureBuilt = false;
+            return;
+        }
+
+        java.util.Map<String, List<Gene>> genesByNeuron = new java.util.HashMap<>();
+        for (Gene g : unique) {
+            String sourceKey = keyForNeuron(g.getSource(), g.getSourceType());
+            String sinkKey = keyForNeuron(g.getSink(), g.getSinkType());
+            genesByNeuron.computeIfAbsent(sourceKey, key -> new ArrayList<>()).add(g);
+            genesByNeuron.computeIfAbsent(sinkKey, key -> new ArrayList<>()).add(g);
+        }
+
+        java.util.ArrayDeque<String> queue = new java.util.ArrayDeque<>();
+        java.util.Set<String> reachedNeurons = new java.util.HashSet<>();
+        java.util.Set<Gene> reachableGenes = new java.util.HashSet<>();
+
+        for (Gene g : unique) {
+            if (!g.containsSensoryInput()) continue;
+            String sourceKey = keyForNeuron(g.getSource(), g.getSourceType());
+            String sinkKey = keyForNeuron(g.getSink(), g.getSinkType());
+            if (reachedNeurons.add(sourceKey)) queue.addLast(sourceKey);
+            if (reachedNeurons.add(sinkKey)) queue.addLast(sinkKey);
+            reachableGenes.add(g);
+        }
+
+        while (!queue.isEmpty()) {
+            String neuronKey = queue.removeFirst();
+            for (Gene g : genesByNeuron.getOrDefault(neuronKey, List.of())) {
+                if (reachableGenes.add(g)) {
+                    String sourceKey = keyForNeuron(g.getSource(), g.getSourceType());
+                    String sinkKey = keyForNeuron(g.getSink(), g.getSinkType());
+                    if (reachedNeurons.add(sourceKey)) queue.addLast(sourceKey);
+                    if (reachedNeurons.add(sinkKey)) queue.addLast(sinkKey);
+                }
+            }
+        }
+
+        List<Gene> retained = new ArrayList<>(reachableGenes);
+
+        // Keep a reasonable minimum genome size so pruning does not collapse a complex brain into a tiny
+        // remnant. Low-count genomes should keep all their genes; larger genomes should retain at least 75%.
+        int minRetained = Math.min(unique.size(), Math.max(8, (int) Math.ceil(unique.size() * 0.75)));
+        if (retained.size() < minRetained) {
+            List<Gene> remaining = new ArrayList<>();
+            for (Gene g : unique) {
+                if (!retained.contains(g)) remaining.add(g);
+            }
+            remaining.sort(Comparator.comparingInt(g -> -this.connectionDegree(g, unique)));
+            for (Gene g : remaining) {
+                if (retained.size() >= minRetained) break;
+                retained.add(g);
+            }
+        }
+
+        if (retained.isEmpty() && !unique.isEmpty()) {
+            retained.add(unique.get(0));
+        }
+
+        this.genes = retained;
+        this.structureBuilt = false;
+    }
+
+    private int connectionDegree(Gene gene, List<Gene> genes) {
+        String sourceKey = keyForNeuron(gene.getSource(), gene.getSourceType());
+        String sinkKey = keyForNeuron(gene.getSink(), gene.getSinkType());
+        int degree = 0;
+        for (Gene candidate : genes) {
+            if (candidate == gene) degree++;
+            if (keyForNeuron(candidate.getSource(), candidate.getSourceType()).equals(sourceKey)) degree++;
+            if (keyForNeuron(candidate.getSink(), candidate.getSinkType()).equals(sinkKey)) degree++;
+        }
+        return degree;
+    }
+
+    private String keyForNeuron(Neuron n, int type) {
+        if (n == null) return "null";
+        // Use instance identity to differentiate distinct neuron objects of same class
+        return type + ":" + n.getClass().getName() + ":" + System.identityHashCode(n);
     }
 
     public static Genome createGenome(Creature creature, int maxGenes) {
         Genome genome = new Genome();
-        while (genome.size() < maxGenes) {
-            for (int i = 0; i < maxGenes; i++) {
-                Gene gene = Gene.createGene(creature, List.of(new InternalNeuron(creature)));
-                if (genome.contains(gene)) continue;
+        int attempts = 0;
+        int maxAttempts = Math.max(100, maxGenes * 20);
+        while (genome.size() < maxGenes && attempts < maxAttempts) {
+            Gene gene = Gene.createGene(creature, List.of(new InternalNeuron(creature)));
+            if (!genome.contains(gene)) {
                 genome.addGenes(gene);
             }
+            attempts++;
         }
 
         genome.formLayers();
